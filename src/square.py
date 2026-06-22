@@ -3,7 +3,7 @@ from figure import Figure
 
 class Square(Figure):
 
-    def __init__(self, side_a):
+    def __init__(self, side_a: int | float):
         if side_a <= 0:
             raise ValueError("Square sides can't be less than 0")
 
