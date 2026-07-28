@@ -1,0 +1,74 @@
+services:
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: phpmyadmin
+    restart: unless-stopped
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+      PMA_ARBITRARY: 1
+      PMA_USER: root
+      PMA_PASSWORD: admin
+    ports:
+      - "8888:80"
+    depends_on:
+      db:
+        condition: service_healthy
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
+
+  db:
+    image: mysql:5.7
+    container_name: mysql_db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: admin
+      MYSQL_DATABASE: prestashop
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-padmin"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    volumes:
+      - db_data:/var/lib/mysql
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
+
+  prestashop:
+    image: prestashop/prestashop:8.1.5
+    container_name: prestashop
+    restart: unless-stopped
+    ports:
+      - "8081:80"
+    environment:
+      DB_SERVER: db
+      DB_NAME: prestashop
+      DB_USER: root
+      DB_PASSWD: admin
+      DB_PREFIX: ps_
+      PS_INSTALL_AUTO: "0"       # Переключаем в режим ручной установки через браузер
+      PS_LANGUAGE: "en"          # Встроенный английский язык, не требующий скачивания
+      PS_COUNTRY: "US"
+      PS_DEV_MODE: "1"
+      PS_DOMAIN: "localhost:8081"
+      ADMIN_MAIL: "admin@example.com"
+      ADMIN_PASSWD: "Admin123!_otus_test_2026"
+      PS_FOLDER_ADMIN: "administration"
+      PS_FOLDER_INSTALL: "install"
+    volumes:
+      - ps_data:/var/www/html
+    depends_on:
+      db:
+        condition: service_healthy
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
+
+volumes:
+  db_data:
+    driver: local
+  ps_data:
+    driver: local
