@@ -1,5 +1,7 @@
+import allure
 from selenium.webdriver.common.by import By
 from pages.base_page import BasePage
+
 
 class ProductPage(BasePage):
     """Карточка товара"""
@@ -12,8 +14,10 @@ class ProductPage(BasePage):
     QUANTITY_INPUT = (By.XPATH, "//input[@id='quantity_wanted']")
     CART_MODAL_CHECK = (By.XPATH, "//h4[@id='myModalLabel']")
 
+    @allure.step("Добавление товара в корзину")
     def click_add_to_cart(self):
         self.wait_for_element(self.ADD_TO_CART_BTN).click()
 
+    @allure.step("Получение текста из модального окна подтверждения")
     def get_cart_modal_title(self):
         return self.wait_for_element(self.CART_MODAL_CHECK)

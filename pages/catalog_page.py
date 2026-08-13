@@ -1,5 +1,7 @@
+import allure
 from selenium.webdriver.common.by import By
 from pages.base_page import BasePage
+
 
 class CatalogPage(BasePage):
     """Каталог"""
@@ -15,10 +17,12 @@ class CatalogPage(BasePage):
                            "//ul[contains(@class, 'dropdown-menu')]//a[contains(text(), 'USD') or contains(text(), '$')]")
     CATALOG_PRODUCT_PRICES = (By.XPATH, "//div[@id='js-product-list']//span[@class='price']")
 
+    @allure.step("Выбор валюты USD в раскрывающемся списке")
     def change_currency_to_usd(self):
         self.wait_for_element(self.CURRENCY_DROP_DOWN).click()
         self.wait_for_clickable(self.ANY_CURRENCY_OPTION).click()
 
+    @allure.step("Получение обновленных цен товаров / старых цен товаров")
     def get_catalog_product_prices_text(self):
         price_elements = self.wait_for_elements(self.CATALOG_PRODUCT_PRICES)
         return [element.text for element in price_elements]

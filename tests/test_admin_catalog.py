@@ -1,70 +1,37 @@
-import unittest
 import pytest
 import random
-
+import allure
 from pages import AdminLoginPage, AdminProductsPage
 
 
-class PrestaShopAdminCatalogTests(unittest.TestCase):
+@pytest.mark.order(10)
+@allure.title("Создание нового товара через администратора с проверкой в списке")
+def test_10_add_new_product_by_admin(admin_session, base_url):
+    # Использована фикстура admin_session для исключения дублирования (Замечание 7)
+    admin_products_page = AdminProductsPage(admin_session, base_url)
+    admin_products_page.open_via_menu()
 
-    @pytest.fixture(autouse=True)
-    def setup_class_fixtures(self, browser, base_url, admin_creds):
-        self.driver = browser
-        self.base_url = base_url
-        self.admin_creds = admin_creds
+    product_name = f"Test T-Shirt {random.randint(1000, 9999)}"
+    admin_products_page.click_new_product()
+    admin_products_page.click_confirm_add_product()
+    admin_products_page.create_simple_product(product_name)
 
-    @pytest.mark.order(10)
-    def test_10_add_new_product_by_admin(self):
-        """Тест создания товара через админа с проверкой в списке"""
-        admin_login_page = AdminLoginPage(self.driver, self.base_url)
+    assert admin_products_page.is_creation_success_visible(), "Уведомление об успехе не появилось"
 
-        admin_login_page.open()
-        admin_login_page.login_as_admin(
-            username=self.admin_creds["email"],
-            password=self.admin_creds["password"]
-        )
-        self.assertTrue(admin_login_page.get_admin_profile_img().is_displayed(),
-                        "Вход в админку не зафиксирован")
-
-        admin_products_page = AdminProductsPage(self.driver, self.base_url)
-        admin_products_page.open_via_menu()
+    admin_products_page.go_back_to_products_list()
+    assert admin_products_page.is_product_present_in_list(product_name), "Созданный товар не найден в списке"
 
 
-        admin_products_page.click_new_product()
-        admin_products_page.click_confirm_add_product()
+@pytest.mark.order(11)
+@allure.title("Удаление товара из списка в разделе администратора")
+def test_11_delete_product_by_admin(admin_session, base_url):
+    # Использована фикстура admin_session (Замечание 7)
+    admin_products_page = AdminProductsPage(admin_session, base_url)
+    admin_products_page.open_via_menu()
 
-        product_name = f"Test T-Shirt {random.randint(1000, 9999)}"
-        admin_products_page.create_simple_product(product_name)
+    admin_products_page.click_first_product_actions()
+    admin_products_page.click_delete_product()
+    admin_products_page.confirm_product_deletion()
 
-        self.assertTrue(admin_products_page.is_creation_success_visible(),
-                        "Уведомление 'Обновление завершено' не появилось")
+    assert admin_products_page.is_deletion_success_visible(), "Уведомление об удалении не появилось"
 
-
-        admin_products_page.go_back_to_products_list()
-
-        self.assertTrue(admin_products_page.is_product_present_in_list(product_name),
-                        f"Созданный товар '{product_name}' не найден в общем списке каталога")
-
-
-    @pytest.mark.order(10)
-    def test_11_delete_product_by_admin(self):
-        """Тест создания товара через админа с проверкой в списке"""
-        admin_login_page = AdminLoginPage(self.driver, self.base_url)
-
-        admin_login_page.open()
-        admin_login_page.login_as_admin(
-            username=self.admin_creds["email"],
-            password=self.admin_creds["password"]
-        )
-        self.assertTrue(admin_login_page.get_admin_profile_img().is_displayed(),
-                        "Вход в админку не зафиксирован")
-
-        admin_products_page = AdminProductsPage(self.driver, self.base_url)
-        admin_products_page.open_via_menu()
-
-        admin_products_page.click_first_product_actions()
-        admin_products_page.click_delete_product()
-        admin_products_page.confirm_product_deletion()
-
-        self.assertTrue(admin_products_page.is_deletion_success_visible(),
-                        "Уведомление 'Удаление завершено' не появилось")
