@@ -49,13 +49,13 @@ services:
       DB_USER: root
       DB_PASSWD: admin
       DB_PREFIX: ps_
-      PS_INSTALL_AUTO: "0"       # Переключаем в режим ручной установки через браузер
-      PS_LANGUAGE: "en"          # Встроенный английский язык, не требующий скачивания
+      PS_INSTALL_AUTO: "0"
+      PS_LANGUAGE: "en"
       PS_COUNTRY: "US"
       PS_DEV_MODE: "1"
       PS_DOMAIN: "localhost:8081"
       ADMIN_MAIL: "admin@example.com"
-      ADMIN_PASSWD: "Admin123!_otus_test_2026"
+      ADMIN_PASSWD: "Admin123!"
       PS_FOLDER_ADMIN: "administration"
       PS_FOLDER_INSTALL: "install"
     volumes:
