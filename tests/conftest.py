@@ -2,11 +2,17 @@ import os
 import pytest
 import yaml
 import allure
+import logging
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options as ChromeOptions
 from selenium.webdriver.firefox.options import Options as FirefoxOptions
 from pages.adminLogin_page import AdminLoginPage
+from logging_config import setup_logging
 
+@pytest.fixture(scope="session", autouse=True)
+def init_logging():
+    """Фикстура запускается один раз на всю сессию и настраивает формат логов"""
+    setup_logging()
 
 def pytest_addoption(parser):
     parser.addoption(

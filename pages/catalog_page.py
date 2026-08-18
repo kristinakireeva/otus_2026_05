@@ -19,10 +19,15 @@ class CatalogPage(BasePage):
 
     @allure.step("Выбор валюты USD в раскрывающемся списке")
     def change_currency_to_usd(self):
-        self.wait_for_element(self.CURRENCY_DROP_DOWN).click()
-        self.wait_for_clickable(self.ANY_CURRENCY_OPTION).click()
+        self.click_element(self.CURRENCY_DROP_DOWN)
+        self.click_element(self.ANY_CURRENCY_OPTION)
 
     @allure.step("Получение обновленных цен товаров / старых цен товаров")
     def get_catalog_product_prices_text(self):
+        self.logger.info("Сбор текстовых значений цен со всех товаров в каталоге")
+
         price_elements = self.wait_for_elements(self.CATALOG_PRODUCT_PRICES)
-        return [element.text for element in price_elements]
+        prices = [element.text for element in price_elements]
+
+        self.logger.info(f"Успешно собрано цен: {len(prices)}. Значения: {prices}")
+        return prices

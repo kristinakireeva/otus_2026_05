@@ -12,7 +12,7 @@ def test_07_add_to_cart_random_product(browser, base_url):
     main_page.click_random_product()
     product_page.click_add_to_cart()
     modal_title = product_page.get_cart_modal_title()
-    assert "Товар добавлен в корзину" in modal_title.text, f"Ожидался текст подтверждения, но отображается: '{modal_title.text}'"
+    assert "Товар добавлен в корзину" in modal_title, f"Ожидался текст подтверждения, но отображается: '{modal_title}'"
 
 
 @pytest.mark.order(8)
