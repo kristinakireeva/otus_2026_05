@@ -1,4 +1,5 @@
 import allure
+import logging
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
@@ -32,17 +33,22 @@ class AdminProductsPage(BasePage):
         self.click_element(self.NEW_PRODUCT_BTN)
         # Динамическое ожидание фрейма модального окна без фиксированных пауз (Замечание 5)
         try:
+            self.logger.info("Ожидание появления iframe модального окна и переключение в него")
             WebDriverWait(self.driver, 5).until(
                 EC.frame_to_be_available_and_switch_to_it((By.TAG_NAME, "iframe"))
             )
+            self.logger.info("Успешно переключились внутрь iframe")
         except Exception:
-            pass
+            self.logger.warning("Iframe не был обнаружен за 5 сек, продолжаем работу в основном контексте")
         return self
 
     @allure.step("Подтверждение добавления товара")
     def click_confirm_add_product(self):
         confirm_btn = self.wait_for_clickable(self.CONFIRM_ADD_BTN)
+        self.logger.info("Нажатие клавиши enter для подтверждения добавления товара")
         confirm_btn.send_keys(Keys.ENTER)
+
+        self.logger.info("Переключение контекста обратно на основную страницу")
         self.driver.switch_to.default_content()
         return self
 
@@ -65,19 +71,25 @@ class AdminProductsPage(BasePage):
     @allure.step("Подтверждение удаления товара")
     def confirm_product_deletion(self):
         self.click_element(self.CONFIRM_DELETE_BTN)
-        # Ожидаем завершения удаления по исчезновению кнопки подтверждения (Замечание 5)
+        self.logger.info("Ожидание исчезновения кнопки подтверждения удаления")
+        # Ожидаем завершения удаления по исчезновению кнопки подтверждения
         WebDriverWait(self.driver, 10).until(
             EC.invisibility_of_element_located(self.CONFIRM_DELETE_BTN)
         )
+        self.logger.info("Кнопка подтверждения исчезла")
         return self
 
     @allure.step("Проверка уведомления о создании товара")
     def is_creation_success_visible(self):
-        return self.wait_for_element(self.PRODUCT_CREATED_ALERT).is_displayed()
+        is_visible = self.wait_for_element(self.PRODUCT_CREATED_ALERT).is_displayed()
+        self.logger.info(f"Отображение уведомления успешного создания товара {is_visible}")
+        return is_visible
 
     @allure.step("Проверка уведомления об удалении товара в каталоге")
     def is_deletion_success_visible(self):
-        return self.wait_for_element(self.PRODUCT_DELETED_ALERT).is_displayed()
+        is_visible = self.wait_for_element(self.PRODUCT_DELETED_ALERT).is_displayed()
+        self.logger.info(f"отображение уведомления успешного удаления товара {is_visible}")
+        return is_visible
 
     @allure.step("Возврат к общему списку товаров")
     def go_back_to_products_list(self):
@@ -87,7 +99,11 @@ class AdminProductsPage(BasePage):
     @allure.step("Проверка наличия созданного товара '{product_name}' в каталоге")
     def is_product_present_in_list(self, product_name):
         product_row_xpath = (By.XPATH, f"//td[contains(text(), '{product_name}')] | //a[contains(text(), '{product_name}')]")
+        self.logger.info(f"Поиск товара {product_name} в таблице каталога")
         try:
-            return self.wait_for_element(product_row_xpath, timeout=5).is_displayed()
+            is_present = self.wait_for_element(product_row_xpath, timeout=5).is_displayed()
+            self.logger.info(f"Товар {product_name} найден в списке {is_present}")
+            return is_present
         except Exception:
+            self.logger.warning(f"Товар {product_name} не найден в списке за тайм-аут")
             return False

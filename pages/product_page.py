@@ -1,4 +1,5 @@
 import allure
+import logging
 from selenium.webdriver.common.by import By
 from pages.base_page import BasePage
 
@@ -16,8 +17,9 @@ class ProductPage(BasePage):
 
     @allure.step("Добавление товара в корзину")
     def click_add_to_cart(self):
-        self.wait_for_element(self.ADD_TO_CART_BTN).click()
+        self.logger.info("Нажатие кнопки 'Добавить в корзину'")
+        self.click_element(self.ADD_TO_CART_BTN)
 
     @allure.step("Получение текста из модального окна подтверждения")
     def get_cart_modal_title(self):
-        return self.wait_for_element(self.CART_MODAL_CHECK)
+        return self.get_element_text(self.CART_MODAL_CHECK)
