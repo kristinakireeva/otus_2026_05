@@ -3,3 +3,4 @@ selenium==4.46.0
 pytest==9.1
 pytest-order
 allure-pytest==2.14.1
+PyYAML
