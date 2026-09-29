@@ -9,10 +9,12 @@ from selenium.webdriver.firefox.options import Options as FirefoxOptions
 from pages.adminLogin_page import AdminLoginPage
 from logging_config import setup_logging
 
+
 @pytest.fixture(scope="session", autouse=True)
 def init_logging():
     """Фикстура запускается один раз на всю сессию и настраивает формат логов"""
     setup_logging()
+
 
 def pytest_addoption(parser):
     parser.addoption(
@@ -21,14 +23,24 @@ def pytest_addoption(parser):
         help="Браузер для тестов: chrome, firefox, safari"
     )
     parser.addoption(
+        "--browser_version",
+        default="120.0",
+        help="Версия браузера для запуска на удаленном сервере"
+    )
+    parser.addoption(
         "--headless",
         action="store_true",
-        help="Запуск браузера без графического интерфейса"
+        help="Запуск браузера без графического интерфейса (только для локального режима)"
     )
     parser.addoption(
         "--url",
         default="http://localhost:8081",
         help="Базовый URL сайта"
+    )
+    parser.addoption(
+        "--executor",
+        default="local",
+        help="Адрес Selenoid (например, http://localhost:4444/wd/hub) или 'local' для локального запуска"
     )
 
 
@@ -60,35 +72,67 @@ def admin_creds():
 @pytest.fixture
 def browser(request):
     browser_name = request.config.getoption("browser").lower()
+    browser_version = request.config.getoption("browser_version")
     headless = request.config.getoption("headless")
+    executor = request.config.getoption("executor")
 
     driver_instance = None
 
-    with allure.step(f"Предусловие: Запуск браузера {browser_name.upper()} (headless={headless})"):
+    execution_mode = f"Selenoid ({executor})" if executor != "local" else "LOCAL"
+    step_msg = f"Предусловие: Запуск браузера {browser_name.upper()} в режиме {execution_mode}"
+
+    with allure.step(step_msg):
+        # 1. Готовим опции для Chrome
         if browser_name == 'chrome':
             options = ChromeOptions()
-            if headless:
-                options.add_argument("--headless=new")  # Актуальный headless-режим для Chrome
+            if headless and executor == "local":
+                options.add_argument("--headless=new")
             options.add_argument("--start-maximized")
-            driver_instance = webdriver.Chrome(options=options)
 
+        # 2. Готовим опции для Firefox
         elif browser_name == 'firefox':
             options = FirefoxOptions()
-            if headless:
+            if headless and executor == "local":
                 options.add_argument("--headless")
             options.add_argument("--width=1920")
             options.add_argument("--height=1080")
-            driver_instance = webdriver.Firefox(options=options)
-            driver_instance.maximize_window()
 
+        # 3. Safari поддерживается только локально
         elif browser_name == 'safari':
-            driver_instance = webdriver.Safari()
-            driver_instance.maximize_window()
-
+            if executor != "local":
+                raise ValueError("Safari не поддерживается для удаленного запуска на Selenoid!")
+            options = None
         else:
             raise ValueError(
                 f"Браузер '{browser_name}' не поддерживается! "
                 f"Используйте: chrome, firefox или safari"
+            )
+
+        if executor == "local":
+            if browser_name == 'chrome':
+                driver_instance = webdriver.Chrome(options=options)
+            elif browser_name == 'firefox':
+                driver_instance = webdriver.Firefox(options=options)
+                driver_instance.maximize_window()
+            elif browser_name == 'safari':
+                driver_instance = webdriver.Safari()
+                driver_instance.maximize_window()
+        else:
+            selenoid_capabilities = {
+                "browserName": browser_name,
+                "browserVersion": browser_version,
+                "selenoid:options": {
+                    "enableVNC": True,
+                    "enableVideo": False
+                }
+            }
+            for key, value in selenoid_capabilities.items():
+                options.set_capability(key, value)
+
+            # Инициализируем удаленный веб-драйвер
+            driver_instance = webdriver.Remote(
+                command_executor=executor,
+                options=options
             )
 
     if request.node is not None:
@@ -107,7 +151,6 @@ def pytest_runtest_makereport(item, call):
     outcome = yield
     rep = outcome.get_result()
 
-    # Проверяем, что упал именно сам тест
     if rep.when == "call" and rep.failed:
         try:
             web_driver = getattr(item, "driver", None)
@@ -124,7 +167,7 @@ def pytest_runtest_makereport(item, call):
 
 @pytest.fixture
 def admin_session(browser, base_url, admin_creds):
-    """Фикстура для автоматического создания авторизованной сессии админа (Замечание 7)"""
+    """Фикстура для автоматического создания авторизованной сессии админа"""
     admin_login_page = AdminLoginPage(browser, base_url)
 
     with allure.step("Предусловие: Авторизация в панели администратора"):
