@@ -76,6 +76,7 @@ def browser(request):
     headless = request.config.getoption("headless")
     executor = request.config.getoption("executor")
 
+
     driver_instance = None
 
     execution_mode = f"Selenoid ({executor})" if executor != "local" else "LOCAL"
