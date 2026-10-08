@@ -34,14 +34,15 @@ def pytest_addoption(parser):
     )
     parser.addoption(
         "--url",
-        default="http://localhost:8081",
+        default="http://172.29.128.1:8081",
         help="Базовый URL сайта"
     )
     parser.addoption(
         "--executor",
-        default="local",
-        help="Адрес Selenoid (например, http://localhost:4444/wd/hub) или 'local' для локального запуска"
+        default="http://172.29.128",
+        help="Адрес Selenoid"
     )
+
 
 
 @pytest.fixture
