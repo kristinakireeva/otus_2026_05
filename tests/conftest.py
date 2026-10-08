@@ -46,7 +46,7 @@ def pytest_addoption(parser):
 
 @pytest.fixture
 def base_url(request):
-    url = request.config.getoption("url")
+    url = os.getenv("URL", request.config.getoption("url"))
     return url.rstrip('/')
 
 
@@ -74,8 +74,9 @@ def browser(request):
     browser_name = request.config.getoption("browser").lower()
     browser_version = request.config.getoption("browser_version")
     headless = request.config.getoption("headless")
-    executor = request.config.getoption("executor")
 
+    # Сначала проверяем переменные из Jenkins (env), если их нет — берём флаг из терминала
+    executor = os.getenv("EXECUTOR", request.config.getoption("executor"))
 
     driver_instance = None
 
