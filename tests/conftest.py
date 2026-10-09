@@ -34,14 +34,15 @@ def pytest_addoption(parser):
     )
     parser.addoption(
         "--url",
-        default="http://172.29.128.1:8081",
+        default="http://prestashop:80",
         help="Базовый URL сайта"
     )
     parser.addoption(
         "--executor",
-        default="http://172.29.128",
+        default="http://selenoid:4444/wd/hub",
         help="Адрес Selenoid"
     )
+
 
 
 
