@@ -17,6 +17,8 @@ services:
     dns:
       - 8.8.8.8
       - 1.1.1.1
+    networks:
+      - prestashop_network
 
   db:
     image: mysql:5.7
@@ -36,6 +38,8 @@ services:
     dns:
       - 8.8.8.8
       - 1.1.1.1
+    networks:
+      - prestashop_network
 
   prestashop:
     image: prestashop/prestashop:8.1.5
@@ -66,6 +70,33 @@ services:
     dns:
       - 8.8.8.8
       - 1.1.1.1
+    networks:
+      - prestashop_network
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  tests:
+    image: prestashop-tests
+    container_name: prestashop-tests
+    entrypoint: [
+      "pytest", "-v", "tests/test_presta_shop.py",
+      "--url", "http://prestashop",
+      "--browser", "chrome",
+      "--headless"
+    ]
+    depends_on:
+      prestashop:
+        condition: service_healthy
+    networks:
+      - prestashop_network
+
+networks:
+  prestashop_network:
+    name: selenoid
+    external: true
 
 volumes:
   db_data:
