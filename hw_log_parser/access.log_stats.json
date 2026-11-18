@@ -1,15 +1,14 @@
 {
-    "file": "access.log",
     "total_requests": 3216723,
-    "methods": {
-        "GET": 2243304,
-        "POST": 918773,
+    "total_stat": {
+        "GET": 2247848,
+        "POST": 918794,
         "PUT": 70,
         "DELETE": 1,
         "OPTIONS": 39,
         "HEAD": 49971
     },
-    "top_3_ips": [
+    "top_ips": [
         {
             "ip": "193.106.31.130",
             "count": 235209
@@ -23,7 +22,7 @@
             "count": 166722
         }
     ],
-    "top_3_longest_requests": [
+    "top_longest": [
         {
             "method": "POST",
             "url": "/administrator/index.php",

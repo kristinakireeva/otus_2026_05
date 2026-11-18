@@ -4,10 +4,12 @@ import json
 import os
 import re
 
-# Регулярное выражение для быстрого и точного разбора строки лога
+# Регулярное выражение для разбора строки лога (устойчиво к экранированным кавычкам)
 LOG_PATTERN = re.compile(
-    r'^(?P<ip>\S+) \S+ \S+ \[(?P<datetime>[^\]]+)\] "(?P<request>[^"]*)" '
-    r'\d+ \S+ "[^"]*" "[^"]*" (?P<duration>\d+)$'
+    r'^(?P<ip>\S+)\s+\S+\s+\S+\s+'
+    r'\[(?P<datetime>[^\]]+)\]\s+'
+    r'"(?P<request>(?:\\.|[^"\\])*)"\s+'
+    r'.*\s+(?P<duration>\d+)$'
 )
 
 TARGET_METHODS = ("GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD")
@@ -26,10 +28,11 @@ def parse_log_file(filepath: str) -> dict:
             if not line:
                 continue
 
-            total_requests += 1
             match = LOG_PATTERN.match(line)
             if not match:
                 continue
+
+            total_requests += 1
 
             ip = match.group("ip")
             dt = match.group("datetime")
@@ -46,7 +49,7 @@ def parse_log_file(filepath: str) -> dict:
             if method in methods_count:
                 methods_count[method] += 1
 
-            # Поддерживаем актуальный топ-3 самых долгих запросов без хранения всех 3 млн строк
+            # Поддерживаем актуальный топ-3 самых долгих запросов
             if len(top_longest) < 3 or duration > top_longest[-1][0]:
                 req_info = {
                     "method": method,
@@ -68,11 +71,10 @@ def parse_log_file(filepath: str) -> dict:
     longest_requests = [item[2] for item in top_longest]
 
     return {
-        "file": os.path.basename(filepath),
         "total_requests": total_requests,
-        "methods": methods_count,
-        "top_3_ips": top_ips,
-        "top_3_longest_requests": longest_requests,
+        "total_stat": methods_count,
+        "top_ips": top_ips,
+        "top_longest": longest_requests,
     }
 
 
@@ -85,8 +87,12 @@ def process_path(target_path: str) -> None:
     elif os.path.isdir(target_path):
         for entry in sorted(os.listdir(target_path)):
             full_path = os.path.join(target_path, entry)
-            # Обрабатываем только файлы, игнорируя вложенные папки и уже созданные json-отчеты
-            if os.path.isfile(full_path) and not entry.endswith(".json"):
+            # Обрабатываем только файлы, игнорируя папки и уже созданные json-отчёты
+            if (
+                os.path.isfile(full_path)
+                and not entry.startswith(".")
+                and not entry.endswith(".json")
+            ):
                 files_to_process.append(full_path)
     else:
         print(f"Ошибка: путь '{target_path}' не найден.")
@@ -105,9 +111,8 @@ def process_path(target_path: str) -> None:
         print(output_json)
         print("-" * 50)
 
-        # Сохранение в отдельный JSON-файл рядом с исходным логом
-        base_name = os.path.splitext(os.path.basename(filepath))[0]
-        output_filename = f"{base_name}_stats.json"
+        # Сохранение в отдельный JSON-файл без потери расширения исходного файла
+        output_filename = f"{os.path.basename(filepath)}_stats.json"
         output_path = os.path.join(os.path.dirname(filepath), output_filename)
 
         with open(output_path, "w", encoding="utf-8") as out_file:
@@ -116,7 +121,7 @@ def process_path(target_path: str) -> None:
         print(f"Статистика сохранена в файл: {output_path}\n")
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(
         description="Парсер логов веб-сервера (формат access.log)."
     )
